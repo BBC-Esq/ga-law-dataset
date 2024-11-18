@@ -1,3 +1,5 @@
+# Harvard's Dataset Creation Script
+
 This script is what harvard originally used to create the dataset located at:
 
 https://huggingface.co/datasets/harvard-lil/cold-cases
@@ -323,3 +325,234 @@ The problem is, Harvard stopped creating the dataset at a certain point in time 
 For example, ```export.py``` relies on a file named ```court-info.csv``` (look at line 182) but the data dumps located at https://com-courtlistener-storage.s3-us-west-2.amazonaws.com/list.html?prefix=bulk-data/ don't include this specific file...
 
 With that being said, my investigation so far indicates that the information contained in the former ```court-info.csv``` is subsumed into one of the other .bz2/.csv files...but I'm having trouble determining which one.  If/when I do that, it'd be relatively easy to create a new "dataset" with the same information as Harvard's...which has the most crucial info for cases.
+
+# My Script to Investigave where the missing .csv file information went:
+
+The above script named ```analyze_schema_syntax3.py``` analyzes and pinpoints the structure of the .csv files (i.e. after extracted from a .bz2 file).  It outputs something like this:
+
+```
+Inspecting file: D:\Scripts\Scrape_Caselaw\FLP Bulk Data\parentheticals-2024-10-31.csv
+--------------------------------------------------
+
+Header Analysis:
+Number of header fields: 6
+
+Quote Character Usage in Data:
+'`' appears 48 times
+'"' appears 8 times
+''' appears 1 times
+
+File Structure Conclusion:
+------------------------
+- Detected delimiter: ','
+- Detected quote character: '`'
+- Fields may contain delimiters within quoted values
+
+Recommended Dask/Pandas Read Settings:
+python
+df = dd.read_csv(file_path,
+               delimiter=',',
+               quotechar='`',
+               escapechar='\\',
+               on_bad_lines='skip')
+
+Attempting to read column headers using detected settings...
+
+Successfully read columns:
+1. id
+2. text
+3. score
+4. described_opinion_id
+5. describing_opinion_id
+6. group_id
+```
+
+I used this script to try and determine where the data from ```court-info.csv``` might have been moved to to, the goal being to use a modified version of Harvard's ```export.py``` if possible to save time.
+
+Here are all the columns/structure from all the .csv files but I'm not sure I'm tracing it correctly...
+
+```
+"D:\Scripts\Scrape_Caselaw\FLP Bulk Data\citation-map-2024-10-31.csv"
+
+1. id
+2. depth
+3. cited_opinion_id
+4. citing_opinion_id
+
+"D:\Scripts\Scrape_Caselaw\FLP Bulk Data\citations-2024-10-31.csv"
+
+1. id
+2. volume
+3. reporter
+4. page
+5. type
+6. cluster_id
+
+"D:\Scripts\Scrape_Caselaw\FLP Bulk Data\courts-2024-10-31.csv"
+
+1. id
+2. pacer_court_id
+3. pacer_has_rss_feed
+4. pacer_rss_entry_types
+5. date_last_pacer_contact
+6. fjc_court_id
+7. date_modified
+8. in_use
+9. has_opinion_scraper
+10. has_oral_argument_scraper
+11. position
+12. citation_string
+13. short_name
+14. full_name
+15. url
+16. start_date
+17. end_date
+18. jurisdiction
+19. notes
+20. parent_court_id
+
+"D:\Scripts\Scrape_Caselaw\FLP Bulk Data\dockets-2024-10-31.csv"
+
+1. id
+2. date_created
+3. date_modified
+4. source
+5. appeal_from_str
+6. assigned_to_str
+7. referred_to_str
+8. panel_str
+9. date_last_index
+10. date_cert_granted
+11. date_cert_denied
+12. date_argued
+13. date_reargued
+14. date_reargument_denied
+15. date_filed
+16. date_terminated
+17. date_last_filing
+18. case_name_short
+19. case_name
+20. case_name_full
+21. slug
+22. docket_number
+23. docket_number_core
+24. pacer_case_id
+25. cause
+26. nature_of_suit
+27. jury_demand
+28. jurisdiction_type
+29. appellate_fee_status
+30. appellate_case_type_information
+31. mdl_status
+32. filepath_local
+33. filepath_ia
+34. filepath_ia_json
+35. ia_upload_failure_count
+36. ia_needs_upload
+37. ia_date_first_change
+38. view_count
+39. date_blocked
+40. blocked
+41. appeal_from_id
+42. assigned_to_id
+43. court_id
+44. idb_data_id
+45. originating_court_information_id
+46. referred_to_id
+47. federal_dn_case_type
+48. federal_dn_office_code
+49. federal_dn_judge_initials_assigned
+50. federal_dn_judge_initials_referred
+51. federal_defendant_number
+52. parent_docket_id
+
+"D:\Scripts\Scrape_Caselaw\FLP Bulk Data\opinion-clusters-2024-10-31.csv"
+
+1. id
+2. date_created
+3. date_modified
+4. judges
+5. date_filed
+6. date_filed_is_approximate
+7. slug
+8. case_name_short
+9. case_name
+10. case_name_full
+11. scdb_id
+12. scdb_decision_direction
+13. scdb_votes_majority
+14. scdb_votes_minority
+15. source
+16. procedural_history
+17. attorneys
+18. nature_of_suit
+19. posture
+20. syllabus
+21. headnotes
+22. summary
+23. disposition
+24. history
+25. other_dates
+26. cross_reference
+27. correction
+28. citation_count
+29. precedential_status
+30. date_blocked
+31. blocked
+32. filepath_json_harvard
+33. filepath_pdf_harvard
+34. docket_id
+35. arguments
+36. headmatter
+
+"D:\Scripts\Scrape_Caselaw\FLP Bulk Data\opinions-2024-10-31.csv"
+
+1. id
+2. date_created
+3. date_modified
+4. author_str
+5. per_curiam
+6. joined_by_str
+7. type
+8. sha1
+9. page_count
+10. download_url
+11. local_path
+12. plain_text
+13. html
+14. html_lawbox
+15. html_columbia
+16. html_anon_2020
+17. xml_harvard
+18. html_with_citations
+19. extracted_by_ocr
+20. author_id
+21. cluster_id
+
+"D:\Scripts\Scrape_Caselaw\FLP Bulk Data\originating-court-information-2024-10-31.csv"
+
+1. id
+2. date_created
+3. date_modified
+4. docket_number
+5. assigned_to_str
+6. ordering_judge_str
+7. court_reporter
+8. date_disposed
+9. date_filed
+10. date_judgment
+11. date_judgment_eod
+12. date_filed_noa
+13. date_received_coa
+14. assigned_to_id
+15. ordering_judge_id
+
+"D:\Scripts\Scrape_Caselaw\FLP Bulk Data\parentheticals-2024-10-31.csv"
+
+1. id
+2. text
+3. score
+4. described_opinion_id
+5. describing_opinion_id
+6. group_id
+```
